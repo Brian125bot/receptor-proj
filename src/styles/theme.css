@@ -1,0 +1,33 @@
+/* Dark editorial theme tokens.
+   All colour, type, and spacing decisions live here so individual
+   components can stay focused on layout. */
+
+:root {
+  /* Palette */
+  --bg-0: #0a0a0f;
+  --bg-1: #11111a;
+  --bg-2: #181822;
+  --bg-3: #1f1f2c;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text-0: #f4f1ea;
+  --text-1: #d8d4c8;
+  --text-2: #8c8a82;
+  --text-3: #5a5852;
+  --accent: #d4af37;
+  --accent-soft: rgba(212, 175, 55, 0.16);
+  --accent-line: rgba(212, 175, 55, 0.42);
+  --danger: #d97a6c;
+  --info: #7aa2c8;
+
+  /* Type */
+  --serif: "EB Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Geometry */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --shadow-md: 0 18px 40px -22px rgba(0, 0, 0, 0.7);
+}
