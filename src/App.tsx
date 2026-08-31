@@ -26,8 +26,6 @@ export default function App() {
   // Fetch RCSB metadata on mount. The viewer does not block on this.
   useEffect(() => {
     const controller = new AbortController();
-    setMetadata(null);
-    setMetadataError(null);
     fetchEntryMetadata(PDB_ID, controller.signal)
       .then((data) => {
         setMetadata(data);

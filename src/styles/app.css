@@ -543,6 +543,28 @@
   background: #0a0a0f;
 }
 
+/* Responsive layout */
+
+@media (max-width: 1024px) {
+  .app-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .viewer {
+    aspect-ratio: 16 / 9;
+    min-height: 280px;
+  }
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+  .sidebar-controls {
+    justify-content: flex-start;
+  }
+}
+
 /* Sidebar control groups */
 
 .sidebar-controls {
