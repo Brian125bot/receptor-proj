@@ -84,12 +84,33 @@ function getInstance(el: PdbeMolstarElement): MolstarInstance | undefined {
   return el.viewerInstance ?? el.instance;
 }
 
+/**
+ * Run an async viewer action, swallowing and logging rejections so callers
+ * don't need to repeat the same `.catch(console.error)` boilerplate.
+ */
+export async function safeAction(
+  instance: MolstarInstance,
+  label: string,
+  action: (inst: MolstarInstance) => Promise<void>,
+): Promise<void> {
+  try {
+    await action(instance);
+  } catch (err) {
+    console.error(`${label} failed`, err);
+  }
+}
+
 /** Resolve the <pdbe-molstar> element's plugin instance once it has loaded. */
 export function awaitInstance(
   el: PdbeMolstarElement,
   timeoutMs = 60_000,
 ): Promise<MolstarInstance> {
   return new Promise((resolve, reject) => {
+    let id: number | null = null;
+    const stop = () => {
+      if (id !== null) cancelAnimationFrame(id);
+    };
+
     const existing = getInstance(el);
     if (existing) {
       resolve(existing);
@@ -99,14 +120,16 @@ export function awaitInstance(
     const tick = () => {
       const inst = getInstance(el);
       if (inst) {
+        stop();
         resolve(inst);
         return;
       }
       if (performance.now() - start > timeoutMs) {
+        stop();
         reject(new Error("pdbe-molstar instance did not become available"));
         return;
       }
-      requestAnimationFrame(tick);
+      id = requestAnimationFrame(tick);
     };
     tick();
   });
@@ -195,15 +218,6 @@ export async function focusResidue(
 
 const LIGAND_HIGHLIGHT = { r: 0xe8, g: 0x9b, b: 0x6c } as const;
 
-export async function setHighlightColor(
-  instance: MolstarInstance,
-  active: boolean,
-): Promise<void> {
-  await instance.visual.setColor({
-    highlight: active ? LIGAND_HIGHLIGHT : HIGHLIGHT,
-  });
-}
-
 export async function toggleLigandOnly(
   instance: MolstarInstance,
   active: boolean,
@@ -260,12 +274,14 @@ export async function focusPocket(
 export async function focusLigand(
   instance: MolstarInstance,
 ): Promise<void> {
+  // BU72 (VF1) is at auth_seq_id 407 in auth chain A. The label_asym_id "I"
+  // is the author's chain ID; pdbe-molstar's focus API uses auth_asym_id.
   await instance.visual.focus(
     [
       {
-        auth_asym_id: "I",
-        start_residue_number: 1,
-        end_residue_number: 9999,
+        auth_asym_id: "A",
+        start_residue_number: 407,
+        end_residue_number: 407,
       },
     ],
     "main",

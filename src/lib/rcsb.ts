@@ -74,11 +74,16 @@ function writeCache(pdbId: string, data: EntryMetadata): void {
   }
 }
 
+export interface EntryMetadataResult {
+  data: EntryMetadata;
+  fromCache: boolean;
+}
+
 export async function fetchEntryMetadata(
   pdbId: string,
   signal?: AbortSignal,
   retries = 3,
-): Promise<EntryMetadata> {
+): Promise<EntryMetadataResult> {
   let lastError: Error | null = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -116,7 +121,7 @@ export async function fetchEntryMetadata(
         cellA: data.cell?.length_a ?? null,
       };
       writeCache(pdbId, result);
-      return result;
+      return { data: result, fromCache: false };
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         throw err;
@@ -130,6 +135,6 @@ export async function fetchEntryMetadata(
   }
   // All retries exhausted — fall back to cached data
   const cached = readCache(pdbId);
-  if (cached) return cached;
+  if (cached) return { data: cached, fromCache: true };
   throw lastError ?? new Error("Failed to fetch metadata");
 }

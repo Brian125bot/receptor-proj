@@ -4,7 +4,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Viewer } from "./components/Viewer";
 import { POCKET_RESIDUES, type PocketResidue } from "./data/residues";
 import { BU72 } from "./data/ligand";
-import { fetchEntryMetadata, type EntryMetadata } from "./lib/rcsb";
+import { fetchEntryMetadata, type EntryMetadataResult } from "./lib/rcsb";
 import "./styles/theme.css";
 import "./styles/app.css";
 
@@ -15,7 +15,7 @@ function residueKey(residue: PocketResidue): string {
 }
 
 export default function App() {
-  const [metadata, setMetadata] = useState<EntryMetadata | null>(null);
+  const [metadata, setMetadata] = useState<EntryMetadataResult["data"] | null>(null);
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const [selectedResidue, setSelectedResidue] = useState<PocketResidue | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
@@ -23,20 +23,25 @@ export default function App() {
   const [ligandOnlyActive, setLigandOnlyActive] = useState(false);
   const [cameraPreset, setCameraPreset] = useState<"overview" | "pocket" | "ligand">("overview");
 
-  // Fetch RCSB metadata on mount. The viewer does not block on this.
-  useEffect(() => {
+  // Single fetch+error-handling path used by both mount and retry.
+  function loadMetadata() {
     const controller = new AbortController();
     fetchEntryMetadata(PDB_ID, controller.signal)
-      .then((data) => {
-        setMetadata(data);
+      .then((result) => {
+        if (result.fromCache) setMetadataError(null);
+        setMetadata(result.data);
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         setMetadataError(message);
         console.warn("RCSB metadata fetch failed:", message);
       });
     return () => controller.abort();
+  }
+
+  // Fetch RCSB metadata on mount. The viewer does not block on this.
+  useEffect(() => {
+    return loadMetadata();
   }, []);
 
   const handleSelect = (residue: PocketResidue | null) => {
@@ -58,13 +63,7 @@ export default function App() {
   const handleRetryMetadata = () => {
     setMetadataError(null);
     setMetadata(null);
-    const controller = new AbortController();
-    fetchEntryMetadata(PDB_ID, controller.signal)
-      .then((data) => setMetadata(data))
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err);
-        setMetadataError(message);
-      });
+    loadMetadata();
   };
 
   return (

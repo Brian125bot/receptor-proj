@@ -4,6 +4,12 @@ import { ResidueCard } from "./ResidueCard";
 
 type CameraPreset = "overview" | "pocket" | "ligand";
 
+const CAMERA_PRESETS: { key: CameraPreset; label: string }[] = [
+  { key: "overview", label: "Overview" },
+  { key: "pocket", label: "Pocket" },
+  { key: "ligand", label: "Ligand" },
+];
+
 interface SidebarProps {
   ligand: Ligand;
   residues: PocketResidue[];
@@ -68,33 +74,21 @@ export function Sidebar({
           </dl>
           <p className="ligand-note">{ligand.note}</p>
         </article>
+
         <div className="ligand-card camera-presets" role="group" aria-label="Camera presets">
           <p className="meta-label">Camera</p>
           <div className="camera-preset-row">
-            <button
-              type="button"
-              className={`ghost-button${cameraPreset === "overview" ? " is-active" : ""}`}
-              aria-pressed={cameraPreset === "overview"}
-              onClick={() => onCameraPresetChange("overview")}
-            >
-              Overview
-            </button>
-            <button
-              type="button"
-              className={`ghost-button${cameraPreset === "pocket" ? " is-active" : ""}`}
-              aria-pressed={cameraPreset === "pocket"}
-              onClick={() => onCameraPresetChange("pocket")}
-            >
-              Pocket
-            </button>
-            <button
-              type="button"
-              className={`ghost-button${cameraPreset === "ligand" ? " is-active" : ""}`}
-              aria-pressed={cameraPreset === "ligand"}
-              onClick={() => onCameraPresetChange("ligand")}
-            >
-              Ligand
-            </button>
+            {CAMERA_PRESETS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                className={`ghost-button${cameraPreset === key ? " is-active" : ""}`}
+                aria-pressed={cameraPreset === key}
+                onClick={() => onCameraPresetChange(key)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </section>

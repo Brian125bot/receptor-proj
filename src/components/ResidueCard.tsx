@@ -1,5 +1,7 @@
 import type { PocketResidue } from "../data/residues";
 
+const TAG_FIELDS: (keyof PocketResidue)[] = ["charge", "hydrophobicity", "motif"];
+
 interface ResidueCardProps {
   residue: PocketResidue;
   active: boolean;
@@ -22,9 +24,14 @@ export function ResidueCard({ residue, active, onSelect }: ResidueCardProps) {
         <p className="residue-role">{residue.role}</p>
         <p className="residue-interaction">{residue.interaction}</p>
         <div className="residue-tags">
-          {residue.charge && <span className="residue-bw--inline">{residue.charge}</span>}
-          {residue.hydrophobicity && <span className="residue-bw--inline">{residue.hydrophobicity}</span>}
-          {residue.motif && <span className="residue-bw--inline">{residue.motif}</span>}
+          {TAG_FIELDS.map(
+            (key) =>
+              residue[key] && (
+                <span key={key} className="residue-bw--inline">
+                  {residue[key]}
+                </span>
+              ),
+          )}
         </div>
         {residue.conservation && <p className="residue-conservation">{residue.conservation}</p>}
       </button>

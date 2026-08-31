@@ -4,12 +4,12 @@ import {
   applyHeroPreset,
   awaitInstance,
   awaitLoadComplete,
+  safeAction,
   focusResidue,
   resetView,
   focusPocket,
   focusLigand,
   toggleLigandOnly,
-  setHighlightColor,
   type MolstarInstance,
   type PdbeMolstarElement,
 } from "../lib/molstar";
@@ -106,12 +106,8 @@ export function Viewer({
   // React to residue selection.
   useEffect(() => {
     const instance = instanceRef.current;
-    if (!instance || status !== "ready") return;
-    if (selectedResidue) {
-      void focusResidue(instance, selectedResidue).catch((err: unknown) => {
-        console.error("focusResidue failed", err);
-      });
-    }
+    if (!instance || status !== "ready" || !selectedResidue) return;
+    void safeAction(instance, "focusResidue", (i) => focusResidue(i, selectedResidue));
   }, [selectedResidue, status]);
 
   // React to reset signal from the parent.
@@ -119,44 +115,33 @@ export function Viewer({
     const instance = instanceRef.current;
     if (!instance || status !== "ready" || resetSignal === 0) return;
     onSelectResidue(null);
-    void resetView(instance).catch((err: unknown) => {
-      console.error("resetView failed", err);
-    });
+    void safeAction(instance, "resetView", resetView);
   }, [resetSignal, status, onSelectResidue]);
 
-  // React to camera preset change.
+  // React to camera preset change. Only fires after the instance is available
+  // (set by the boot effect before setStatus("ready")), so the initial mount
+  // run is a no-op and we don't re-apply applyHeroPreset's visibility/color.
   useEffect(() => {
     const instance = instanceRef.current;
-    if (!instance || status !== "ready") return;
-    const apply = async () => {
+    if (!instance) return;
+    void safeAction(instance, "camera-preset", async (inst) => {
       if (cameraPreset === "pocket") {
-        await focusPocket(instance).catch((err: unknown) => {
-          console.error("focusPocket failed", err);
-        });
+        await focusPocket(inst);
       } else if (cameraPreset === "ligand") {
-        await focusLigand(instance).catch((err: unknown) => {
-          console.error("focusLigand failed", err);
-        });
+        await focusLigand(inst);
       } else {
-        await resetView(instance).catch((err: unknown) => {
-          console.error("resetView failed", err);
-        });
+        await resetView(inst);
       }
-    };
-    void apply();
-  }, [cameraPreset, status]);
+    });
+  }, [cameraPreset]);
 
-  // React to ligand-only toggle.
+  // React to ligand-only toggle. Only fires after the instance is available,
+  // so the initial mount run is a no-op and we don't hide the ligand on load.
   useEffect(() => {
     const instance = instanceRef.current;
-    if (!instance || status !== "ready") return;
-    void toggleLigandOnly(instance, ligandOnlyActive).catch((err: unknown) => {
-      console.error("toggleLigandOnly failed", err);
-    });
-    void setHighlightColor(instance, ligandOnlyActive).catch((err: unknown) => {
-      console.error("setHighlightColor failed", err);
-    });
-  }, [ligandOnlyActive, status]);
+    if (!instance) return;
+    void safeAction(instance, "toggleLigandOnly", (i) => toggleLigandOnly(i, ligandOnlyActive));
+  }, [ligandOnlyActive]);
 
   return (
     <div className="viewer" data-status={status}>
