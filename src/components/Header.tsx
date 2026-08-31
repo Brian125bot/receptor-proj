@@ -4,6 +4,7 @@ interface HeaderProps {
   metadata: EntryMetadata | null;
   loading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
 function formatResolution(value: number | null): string {
@@ -21,7 +22,7 @@ function formatMethod(value: string | null): string {
     .join(" ");
 }
 
-export function Header({ metadata, loading, error }: HeaderProps) {
+export function Header({ metadata, loading, error, onRetry }: HeaderProps) {
   const title = "Mu Opioid Receptor";
   const subtitle = "Active state, agonist-bound · class A GPCR";
 
@@ -38,6 +39,17 @@ export function Header({ metadata, loading, error }: HeaderProps) {
           <div className="meta-card meta-error" role="status">
             <span className="meta-label">Metadata</span>
             <span className="meta-value">RCSB unreachable — showing cached values</span>
+            {onRetry && (
+              <button
+                type="button"
+                className="ghost-button"
+                style={{ marginTop: 8, width: "100%" }}
+                onClick={onRetry}
+                aria-label="Retry fetching metadata"
+              >
+                Retry
+              </button>
+            )}
           </div>
         ) : loading ? (
           <div className="meta-card" aria-busy="true">

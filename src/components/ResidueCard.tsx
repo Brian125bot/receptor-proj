@@ -21,6 +21,12 @@ export function ResidueCard({ residue, active, onSelect }: ResidueCardProps) {
         </div>
         <p className="residue-role">{residue.role}</p>
         <p className="residue-interaction">{residue.interaction}</p>
+        <div className="residue-tags">
+          {residue.charge && <span className="residue-bw--inline">{residue.charge}</span>}
+          {residue.hydrophobicity && <span className="residue-bw--inline">{residue.hydrophobicity}</span>}
+          {residue.motif && <span className="residue-bw--inline">{residue.motif}</span>}
+        </div>
+        {residue.conservation && <p className="residue-conservation">{residue.conservation}</p>}
       </button>
     </li>
   );

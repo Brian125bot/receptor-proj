@@ -2,29 +2,50 @@ import type { Ligand } from "../data/ligand";
 import type { PocketResidue } from "../data/residues";
 import { ResidueCard } from "./ResidueCard";
 
+type CameraPreset = "overview" | "pocket" | "ligand";
+
 interface SidebarProps {
   ligand: Ligand;
   residues: PocketResidue[];
   activeResidueKey: string | null;
+  cameraPreset: CameraPreset;
   onSelectResidue(residue: PocketResidue): void;
   onResetView(): void;
+  onCameraPresetChange(preset: CameraPreset): void;
+  onToggleLigandOnly(active: boolean): void;
+  ligandOnlyActive?: boolean;
 }
 
 export function Sidebar({
   ligand,
   residues,
   activeResidueKey,
+  cameraPreset,
   onSelectResidue,
   onResetView,
+  onCameraPresetChange,
+  onToggleLigandOnly,
+  ligandOnlyActive = false,
 }: SidebarProps) {
   return (
     <aside className="sidebar">
       <section className="sidebar-section">
         <header className="sidebar-section-head">
           <h2>Bound ligand</h2>
-          <button type="button" className="ghost-button" onClick={onResetView}>
-            Reset view
-          </button>
+          <div className="sidebar-controls">
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => onToggleLigandOnly(!ligandOnlyActive)}
+              aria-pressed={ligandOnlyActive}
+              aria-label={ligandOnlyActive ? "Show full structure" : "Show ligand only"}
+            >
+              {ligandOnlyActive ? "Full view" : "Ligand only"}
+            </button>
+            <button type="button" className="ghost-button" onClick={onResetView} aria-label="Reset view">
+              Reset
+            </button>
+          </div>
         </header>
         <article className="ligand-card">
           <div className="ligand-card-row">
@@ -47,6 +68,35 @@ export function Sidebar({
           </dl>
           <p className="ligand-note">{ligand.note}</p>
         </article>
+        <div className="ligand-card camera-presets" role="group" aria-label="Camera presets">
+          <p className="meta-label">Camera</p>
+          <div className="camera-preset-row">
+            <button
+              type="button"
+              className={`ghost-button${cameraPreset === "overview" ? " is-active" : ""}`}
+              aria-pressed={cameraPreset === "overview"}
+              onClick={() => onCameraPresetChange("overview")}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              className={`ghost-button${cameraPreset === "pocket" ? " is-active" : ""}`}
+              aria-pressed={cameraPreset === "pocket"}
+              onClick={() => onCameraPresetChange("pocket")}
+            >
+              Pocket
+            </button>
+            <button
+              type="button"
+              className={`ghost-button${cameraPreset === "ligand" ? " is-active" : ""}`}
+              aria-pressed={cameraPreset === "ligand"}
+              onClick={() => onCameraPresetChange("ligand")}
+            >
+              Ligand
+            </button>
+          </div>
+        </div>
       </section>
 
       <section className="sidebar-section">

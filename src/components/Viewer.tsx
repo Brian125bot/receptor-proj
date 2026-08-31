@@ -6,17 +6,25 @@ import {
   awaitLoadComplete,
   focusResidue,
   resetView,
+  focusPocket,
+  focusLigand,
+  toggleLigandOnly,
+  setHighlightColor,
   type MolstarInstance,
   type PdbeMolstarElement,
 } from "../lib/molstar";
 import type { PocketResidue } from "../data/residues";
 
+type CameraPreset = "overview" | "pocket" | "ligand";
+
 interface ViewerProps {
   pdbId: string;
   selectedResidue: PocketResidue | null;
   resetSignal: number;
+  cameraPreset: CameraPreset;
   onSelectResidue(residue: PocketResidue | null): void;
   onReady(): void;
+  ligandOnlyActive?: boolean;
 }
 
 type Status = "loading" | "ready" | "error";
@@ -40,19 +48,21 @@ const PDB_ATTRIBUTES = {
   "hide-control-info-icon": true,
   "loading-overlay": false,
   encoding: "cif" as const,
-  "bg-color-r": 15,
-  "bg-color-g": 15,
-  "bg-color-b": 20,
-  lighting: "metallic",
-  "visual-style": "molecular-surface",
+  "bg-color-r": 18,
+  "bg-color-g": 18,
+  "bg-color-b": 26,
+  lighting: "default",
+  "visual-style": "cartoon",
 };
 
 export function Viewer({
   pdbId,
   selectedResidue,
   resetSignal,
+  cameraPreset,
   onSelectResidue,
   onReady,
+  ligandOnlyActive = false,
 }: ViewerProps) {
   const elementRef = useRef<PdbeMolstarElement | null>(null);
   const instanceRef = useRef<MolstarInstance | null>(null);
@@ -113,6 +123,40 @@ export function Viewer({
       console.error("resetView failed", err);
     });
   }, [resetSignal, status, onSelectResidue]);
+
+  // React to camera preset change.
+  useEffect(() => {
+    const instance = instanceRef.current;
+    if (!instance || status !== "ready") return;
+    const apply = async () => {
+      if (cameraPreset === "pocket") {
+        await focusPocket(instance).catch((err: unknown) => {
+          console.error("focusPocket failed", err);
+        });
+      } else if (cameraPreset === "ligand") {
+        await focusLigand(instance).catch((err: unknown) => {
+          console.error("focusLigand failed", err);
+        });
+      } else {
+        await resetView(instance).catch((err: unknown) => {
+          console.error("resetView failed", err);
+        });
+      }
+    };
+    void apply();
+  }, [cameraPreset, status]);
+
+  // React to ligand-only toggle.
+  useEffect(() => {
+    const instance = instanceRef.current;
+    if (!instance || status !== "ready") return;
+    void toggleLigandOnly(instance, ligandOnlyActive).catch((err: unknown) => {
+      console.error("toggleLigandOnly failed", err);
+    });
+    void setHighlightColor(instance, ligandOnlyActive).catch((err: unknown) => {
+      console.error("setHighlightColor failed", err);
+    });
+  }, [ligandOnlyActive, status]);
 
   return (
     <div className="viewer" data-status={status}>

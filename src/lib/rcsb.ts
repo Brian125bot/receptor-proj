@@ -50,41 +50,86 @@ const QUERY = /* GraphQL */ `
   }
 `;
 
+const CACHE_KEY_PREFIX = "mu-opioid-metadata-";
+
+function getCacheKey(pdbId: string): string {
+  return `${CACHE_KEY_PREFIX}${pdbId.toUpperCase()}`;
+}
+
+function readCache(pdbId: string): EntryMetadata | null {
+  try {
+    const raw = localStorage.getItem(getCacheKey(pdbId));
+    if (!raw) return null;
+    return JSON.parse(raw) as EntryMetadata;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(pdbId: string, data: EntryMetadata): void {
+  try {
+    localStorage.setItem(getCacheKey(pdbId), JSON.stringify(data));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export async function fetchEntryMetadata(
   pdbId: string,
   signal?: AbortSignal,
+  retries = 3,
 ): Promise<EntryMetadata> {
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: QUERY, variables: { id: pdbId } }),
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`RCSB GraphQL ${res.status} ${res.statusText}`);
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: QUERY, variables: { id: pdbId } }),
+        signal,
+      });
+      if (!res.ok) {
+        throw new Error(`RCSB GraphQL ${res.status} ${res.statusText}`);
+      }
+      const json = (await res.json()) as GraphQLResponse;
+      if (json.errors) {
+        throw new Error(`RCSB GraphQL errors: ${JSON.stringify(json.errors)}`);
+      }
+      const data = json.data?.entry;
+      if (!data) {
+        throw new Error(`No entry returned for ${pdbId}`);
+      }
+      const resolutionList = data.rcsb_entry_info?.resolution_combined ?? null;
+      const resolution =
+        resolutionList && resolutionList.length > 0
+          ? resolutionList.reduce((a, b) => a + b, 0) / resolutionList.length
+          : null;
+      const releaseDate = data.rcsb_accession_info?.initial_release_date ?? null;
+      const releaseYear = releaseDate ? Number(releaseDate.slice(0, 4)) : null;
+      const method = data.exptl?.[0]?.method ?? data.rcsb_entry_info?.experimental_method ?? null;
+      const result: EntryMetadata = {
+        rcsbId: pdbId.toUpperCase(),
+        resolution,
+        method,
+        releaseYear,
+        title: data.struct?.title ?? null,
+        cellA: data.cell?.length_a ?? null,
+      };
+      writeCache(pdbId, result);
+      return result;
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        throw err;
+      }
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < retries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
   }
-  const json = (await res.json()) as GraphQLResponse;
-  if (json.errors) {
-    throw new Error(`RCSB GraphQL errors: ${JSON.stringify(json.errors)}`);
-  }
-  const data = json.data?.entry;
-  if (!data) {
-    throw new Error(`No entry returned for ${pdbId}`);
-  }
-  const resolutionList = data.rcsb_entry_info?.resolution_combined ?? null;
-  const resolution =
-    resolutionList && resolutionList.length > 0
-      ? resolutionList.reduce((a, b) => a + b, 0) / resolutionList.length
-      : null;
-  const releaseDate = data.rcsb_accession_info?.initial_release_date ?? null;
-  const releaseYear = releaseDate ? Number(releaseDate.slice(0, 4)) : null;
-  const method = data.exptl?.[0]?.method ?? data.rcsb_entry_info?.experimental_method ?? null;
-  return {
-    rcsbId: pdbId.toUpperCase(),
-    resolution,
-    method,
-    releaseYear,
-    title: data.struct?.title ?? null,
-    cellA: data.cell?.length_a ?? null,
-  };
+  // All retries exhausted — fall back to cached data
+  const cached = readCache(pdbId);
+  if (cached) return cached;
+  throw lastError ?? new Error("Failed to fetch metadata");
 }

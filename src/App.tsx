@@ -20,6 +20,8 @@ export default function App() {
   const [selectedResidue, setSelectedResidue] = useState<PocketResidue | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
   const [viewerReady, setViewerReady] = useState(false);
+  const [ligandOnlyActive, setLigandOnlyActive] = useState(false);
+  const [cameraPreset, setCameraPreset] = useState<"overview" | "pocket" | "ligand">("overview");
 
   // Fetch RCSB metadata on mount. The viewer does not block on this.
   useEffect(() => {
@@ -47,12 +49,33 @@ export default function App() {
     setResetSignal((n) => n + 1);
   };
 
+  const handleToggleLigandOnly = (active: boolean) => {
+    setLigandOnlyActive(active);
+  };
+
+  const handleCameraPresetChange = (preset: "overview" | "pocket" | "ligand") => {
+    setCameraPreset(preset);
+  };
+
+  const handleRetryMetadata = () => {
+    setMetadataError(null);
+    setMetadata(null);
+    const controller = new AbortController();
+    fetchEntryMetadata(PDB_ID, controller.signal)
+      .then((data) => setMetadata(data))
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        setMetadataError(message);
+      });
+  };
+
   return (
     <div className="app">
       <Header
         metadata={metadata}
         loading={!metadata && !metadataError}
         error={metadataError}
+        onRetry={handleRetryMetadata}
       />
       <main className="app-main">
         <div className="viewer-shell">
@@ -60,8 +83,10 @@ export default function App() {
             pdbId={PDB_ID}
             selectedResidue={selectedResidue}
             resetSignal={resetSignal}
+            cameraPreset={cameraPreset}
             onSelectResidue={handleSelect}
             onReady={() => setViewerReady(true)}
+            ligandOnlyActive={ligandOnlyActive}
           />
           <p className="viewer-hint" aria-hidden={!viewerReady}>
             <span className="dot" /> Drag to orbit · scroll to zoom · click a residue in the
@@ -72,8 +97,12 @@ export default function App() {
           ligand={BU72}
           residues={POCKET_RESIDUES}
           activeResidueKey={selectedResidue ? residueKey(selectedResidue) : null}
+          cameraPreset={cameraPreset}
           onSelectResidue={handleSelect}
           onResetView={handleReset}
+          onCameraPresetChange={handleCameraPresetChange}
+          onToggleLigandOnly={handleToggleLigandOnly}
+          ligandOnlyActive={ligandOnlyActive}
         />
       </main>
       <footer className="page-footer">

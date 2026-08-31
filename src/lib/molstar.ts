@@ -115,7 +115,7 @@ export function awaitInstance(
 /** Wait until the structure has finished loading. */
 export function awaitLoadComplete(
   instance: MolstarInstance,
-  timeoutMs = 60_000,
+  timeoutMs = 90_000,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let done = false;
@@ -145,7 +145,7 @@ export async function applyHeroPreset(
   instance: MolstarInstance,
 ): Promise<void> {
   // Background: near-black with a hint of blue.
-  await instance.canvas.setBgColor({ r: 0x0f, g: 0x0f, b: 0x14 });
+  await instance.canvas.setBgColor({ r: 0x12, g: 0x12, b: 0x1a });
 
   // Visual toggles via instance — covers edge cases attributes don't.
   await instance.visual.visibility({
@@ -193,6 +193,34 @@ export async function focusResidue(
   });
 }
 
+const LIGAND_HIGHLIGHT = { r: 0xe8, g: 0x9b, b: 0x6c } as const;
+
+export async function setHighlightColor(
+  instance: MolstarInstance,
+  active: boolean,
+): Promise<void> {
+  await instance.visual.setColor({
+    highlight: active ? LIGAND_HIGHLIGHT : HIGHLIGHT,
+  });
+}
+
+export async function toggleLigandOnly(
+  instance: MolstarInstance,
+  active: boolean,
+): Promise<void> {
+  await instance.visual.visibility({
+    polymer: !active,
+    het: active,
+    water: false,
+    carbs: false,
+    nonStandard: false,
+    maps: false,
+  });
+  await instance.visual.setColor({
+    highlight: active ? LIGAND_HIGHLIGHT : HIGHLIGHT,
+  });
+}
+
 export async function resetView(
   instance: MolstarInstance,
 ): Promise<void> {
@@ -206,6 +234,38 @@ export async function resetView(
         auth_asym_id: "A",
         start_residue_number: 1,
         end_residue_number: 1000,
+      },
+    ],
+    "main",
+  );
+}
+
+export async function focusPocket(
+  instance: MolstarInstance,
+): Promise<void> {
+  // Center on the orthosteric pocket by focusing on a residue range that
+  // spans the pocket (residues ~140–330 in 5C1M chain A).
+  await instance.visual.focus(
+    [
+      {
+        auth_asym_id: "A",
+        start_residue_number: 140,
+        end_residue_number: 330,
+      },
+    ],
+    "main",
+  );
+}
+
+export async function focusLigand(
+  instance: MolstarInstance,
+): Promise<void> {
+  await instance.visual.focus(
+    [
+      {
+        auth_asym_id: "I",
+        start_residue_number: 1,
+        end_residue_number: 9999,
       },
     ],
     "main",

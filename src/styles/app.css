@@ -542,3 +542,52 @@
 .msp-layout-expanded {
   background: #0a0a0f;
 }
+
+/* Sidebar control groups */
+
+.sidebar-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.camera-presets {
+  margin-top: 8px;
+}
+
+.camera-presets .meta-label {
+  margin: 0 0 6px;
+}
+
+.camera-preset-row {
+  display: flex;
+  gap: 6px;
+}
+
+.camera-preset-row .ghost-button {
+  flex: 1 1 0;
+  text-align: center;
+}
+
+.ghost-button.is-active {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+/* Residue card tags */
+
+.residue-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.residue-conservation {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+}
