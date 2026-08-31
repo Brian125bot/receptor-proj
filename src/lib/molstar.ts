@@ -145,7 +145,7 @@ export async function applyHeroPreset(
   instance: MolstarInstance,
 ): Promise<void> {
   // Background: near-black with a hint of blue.
-  await instance.canvas.setBgColor({ r: 0x0a, g: 0x0a, b: 0x0f });
+  await instance.canvas.setBgColor({ r: 0x0f, g: 0x0f, b: 0x14 });
 
   // Visual toggles via instance — covers edge cases attributes don't.
   await instance.visual.visibility({

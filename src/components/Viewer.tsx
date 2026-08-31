@@ -40,11 +40,11 @@ const PDB_ATTRIBUTES = {
   "hide-control-info-icon": true,
   "loading-overlay": false,
   encoding: "cif" as const,
-  "bg-color-r": 10,
-  "bg-color-g": 10,
-  "bg-color-b": 15,
-  lighting: "matte",
-  "visual-style": "cartoon",
+  "bg-color-r": 15,
+  "bg-color-g": 15,
+  "bg-color-b": 20,
+  lighting: "metallic",
+  "visual-style": "molecular-surface",
 };
 
 export function Viewer({
